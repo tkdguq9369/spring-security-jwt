@@ -1,5 +1,7 @@
 package com.cos.jwt;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
 import com.cos.jwt.auth.PrincipalDetails;
 import com.cos.jwt.model.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +21,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.Date;
 
 //스프링 시큐리티에서 UsernamePasswordAuthenticationFilter 존재
 // /login 요청해서 username, password 전송하면 (post)
@@ -56,10 +59,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             log.info("authentication={}", authentication);
 
 
-            // 3. PricipalDetails를 세션에 담음
-            // authentication 객체가 session영역에 저장
-            PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
-            log.info("principalDetails.getUser().getUsername()={}", principalDetails.getUser().getUsername());
+
 
             // 4. JWT토큰을 만들어서 응답
             return authentication;
@@ -72,6 +72,22 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     // attemptAuthentication 실행 후 인증이 정상적으로 된 경우 실행
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        super.successfulAuthentication(request, response, chain, authResult);
+
+
+        // 3. PricipalDetails를 세션에 담음
+        // authentication 객체가 session영역에 저장
+
+        PrincipalDetails principalDetails = (PrincipalDetails) authResult.getPrincipal();
+        log.info("principalDetails={}", principalDetails);
+
+        //RSA 방식이 아닌 Hash암호방식
+        String jwtToken = JWT.create()
+                .withSubject("cosToken")
+                .withExpiresAt(new Date(System.currentTimeMillis() + (60000 * 10)))
+                .withClaim("id", principalDetails.getUser().getId())
+                .withClaim("username", principalDetails.getUser().getUsername())
+                .sign(Algorithm.HMAC512("cos"));
+
+        response.addHeader("Authorization", "Bearer "+jwtToken);
     }
 }
