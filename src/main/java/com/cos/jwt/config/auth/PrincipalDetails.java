@@ -1,4 +1,4 @@
-package com.cos.jwt.auth;
+package com.cos.jwt.config.auth;
 
 import com.cos.jwt.model.User;
 import lombok.Data;
